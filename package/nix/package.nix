@@ -12,6 +12,7 @@
   freetype,
   gst_all_1,
   gtk3,
+  libayatana-appindicator,
   libdrm,
   libglvnd,
   libva,
@@ -29,6 +30,11 @@
 }:
 let
   manifest = lib.importTOML ../../Cargo.toml;
+  waylandRuntimeLibraryPath = lib.makeLibraryPath [ wayland ];
+  guiRuntimeLibraryPath = lib.makeLibraryPath [
+    libayatana-appindicator
+    wayland
+  ];
 
   renderer = stdenv.mkDerivation {
     pname = "wallpaper-engine-renderer";
@@ -103,6 +109,7 @@ rustPlatform.buildRustPackage {
     gst_all_1.gst-plugins-bad
     gst_all_1.gst-plugins-good
     gtk3
+    libayatana-appindicator
     libdrm
     libglvnd
     libva
@@ -144,10 +151,12 @@ rustPlatform.buildRustPackage {
     gstreamerPluginPath="${gst_all_1.gst-plugins-base}/lib/gstreamer-1.0:${gst_all_1.gst-plugins-bad}/lib/gstreamer-1.0:${gst_all_1.gst-plugins-good}/lib/gstreamer-1.0:${gst_all_1.gst-libav}/lib/gstreamer-1.0"
     wrapProgram $out/bin/we-layerd \
       --set CEF_ROOT "${cef-binary}" \
-      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$gstreamerPluginPath"
+      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$gstreamerPluginPath" \
+      --prefix LD_LIBRARY_PATH : "${waylandRuntimeLibraryPath}"
     wrapProgram $out/bin/we-gui \
       --set CEF_ROOT "${cef-binary}" \
-      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$gstreamerPluginPath"
+      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$gstreamerPluginPath" \
+      --prefix LD_LIBRARY_PATH : "${guiRuntimeLibraryPath}"
   '';
 
   meta = {
